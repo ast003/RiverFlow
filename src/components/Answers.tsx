@@ -111,7 +111,7 @@ const Answers = ({
             <div className="mt-4 flex items-center justify-end gap-1">
               <picture>
                 <img
-                  src={avatars.getInitials(answer.author.name, 36, 36).href}
+                  src={avatars.getInitials(answer.author.name, 36, 36)}
                   alt={answer.author.name}
                   className="rounded-lg"
                 />
