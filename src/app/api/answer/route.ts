@@ -37,3 +37,34 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+export async function DELETE(request: NextRequest) {
+  try {
+    const { answerId, authorId } = await request.json();
+
+    // Check if the answer exists
+    const answer = await databases.getDocument(db, answerCollection, answerId);
+
+    // Delete the answer
+    const response = await databases.deleteDocument(
+      db,
+      answerCollection,
+      answerId
+    );
+    //decrease author reputation
+    const prefs = await users.getPrefs<UserPrefs>(answer.authorId);
+    await users.updatePrefs(answer.authorId, {
+      reputation: Number(prefs.reputation) - 1,
+    });
+    return NextResponse.json({ data: response }, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        message:
+          error?.message || "An error occurred while processing your request.",
+      },
+      {
+        status: error?.status || error?.code || 500,
+      }
+    );
+  }
+}
