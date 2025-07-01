@@ -1,70 +1,70 @@
-import { NextRequest, NextResponse } from "next/server";
 import { answerCollection, db } from "@/models/name";
-import { ID } from "node-appwrite";
 import { databases, users } from "@/models/server/config";
-import { UserPrefs } from "@/store/Auth";
-export async function POST(request: NextRequest) {
-  try {
-    const { questionId, answer, authorId } = await request.json();
+import { NextRequest, NextResponse } from "next/server";
+import { ID } from "node-appwrite";
+import {UserPrefs} from "@/store/Auth"
 
-    const response = await databases.createDocument(
-      db,
-      answerCollection,
-      ID.unique(),
-      {
-        content: answer,
-        authorId: authorId,
-        questionId: questionId,
-      }
-    );
-    //INCREASE AUTHOR REPUTATION
-    const prefs = await users.getPrefs<UserPrefs>(authorId);
+export async function POST(request: NextRequest){
+  try {
+    const {questionId, answer, authorId} = await request.json();
+
+    const response = await databases.createDocument(db, answerCollection, ID.unique(), {
+      content: answer,
+      authorId: authorId,
+      questionId: questionId
+    })
+
+    // Increase author reputation
+    const prefs = await users.getPrefs<UserPrefs>(authorId)
     await users.updatePrefs(authorId, {
-      repuatation: Number(prefs.reputation) + 1,
-    });
+      reputation: Number(prefs.reputation) + 1
+    })
+
     return NextResponse.json(response, {
-      status: 201,
-    });
+      status: 201
+    })
+
   } catch (error: any) {
     return NextResponse.json(
       {
-        error:
-          error?.message || "An error occurred while processing your request.",
+        error: error?.message || "Error creating answer"
       },
       {
-        status: error?.status || error?.code || 500,
+        status: error?.status || error?.code || 500
       }
-    );
+    )
   }
 }
-export async function DELETE(request: NextRequest) {
+
+export async function DELETE(request: NextRequest){
   try {
-    const { answerId, authorId } = await request.json();
+    const {answerId} = await request.json()
 
-    // Check if the answer exists
-    const answer = await databases.getDocument(db, answerCollection, answerId);
+    const answer = await databases.getDocument(db, answerCollection, answerId)
 
-    // Delete the answer
-    const response = await databases.deleteDocument(
-      db,
-      answerCollection,
-      answerId
-    );
-    //decrease author reputation
-    const prefs = await users.getPrefs<UserPrefs>(answer.authorId);
+    const response = await databases.deleteDocument(db, answerCollection, answerId)
+
+    //decrese the reputation
+    const prefs = await users.getPrefs<UserPrefs>(answer.authorId)
     await users.updatePrefs(answer.authorId, {
-      reputation: Number(prefs.reputation) - 1,
-    });
-    return NextResponse.json({ data: response }, { status: 200 });
+      reputation: Number(prefs.reputation) - 1
+    })
+
+    return NextResponse.json(
+      {data: response},
+      {status: 200}
+  )
+
+
+
   } catch (error: any) {
     return NextResponse.json(
       {
-        message:
-          error?.message || "An error occurred while processing your request.",
+        message: error?.message || "Error deleting the answer"
       },
       {
-        status: error?.status || error?.code || 500,
+        status: error?.status || error?.code || 500
       }
-    );
+    )
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import RTE from "@/components/RTE";
-import { Meteors } from "@/components/magicui/meteors";
+import Meteors from "@/components/magicui/meteors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/Auth";
@@ -15,9 +15,9 @@ import { databases, storage } from "@/models/client/config";
 import {
   db,
   questionAttachmentBucket,
-  questioncollection,
+  questionCollection,
 } from "@/models/name";
-import { Confetti } from "@/components/magicui/confetti";
+import confetti from "canvas-confetti";
 
 const LabelInputContainer = ({
   children,
@@ -39,11 +39,6 @@ const LabelInputContainer = ({
   );
 };
 
-/**
- * ******************************************************************************
- * ![INFO]: for buttons, refer to https://ui.aceternity.com/components/tailwindcss-buttons
- * ******************************************************************************
- */
 const QuestionForm = ({ question }: { question?: Models.Document }) => {
   const { user } = useAuthStore();
   const [tag, setTag] = React.useState("");
@@ -61,27 +56,27 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
   const [error, setError] = React.useState("");
 
   const loadConfetti = (timeInMS = 3000) => {
-    const end = Date.now() + timeInMS; // 3 seconds
+    const end = Date.now() + timeInMS;
     const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
 
     const frame = () => {
       if (Date.now() > end) return;
 
-      Confetti({
+      confetti({
         particleCount: 2,
         angle: 60,
         spread: 55,
         startVelocity: 60,
         origin: { x: 0, y: 0.5 },
-        colors: colors,
+        colors,
       });
-      Confetti({
+      confetti({
         particleCount: 2,
         angle: 120,
         spread: 55,
         startVelocity: 60,
         origin: { x: 1, y: 0.5 },
-        colors: colors,
+        colors,
       });
 
       requestAnimationFrame(frame);
@@ -101,7 +96,7 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
 
     const response = await databases.createDocument(
       db,
-      questioncollection,
+      questionCollection,
       ID.unique(),
       {
         title: formData.title,
@@ -113,7 +108,6 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
     );
 
     loadConfetti();
-
     return response;
   };
 
@@ -121,7 +115,7 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
     if (!question) throw new Error("Please provide a question");
 
     const attachmentId = await (async () => {
-      if (!formData.attachment) return question?.attachmentId as string;
+      if (!formData.attachment) return question.attachmentId as string;
 
       await storage.deleteFile(questionAttachmentBucket, question.attachmentId);
 
@@ -136,14 +130,14 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
 
     const response = await databases.updateDocument(
       db,
-      questioncollection,
+      questionCollection,
       question.$id,
       {
         title: formData.title,
         content: formData.content,
         authorId: formData.authorId,
         tags: Array.from(formData.tags),
-        attachmentId: attachmentId,
+        attachmentId,
       }
     );
 
@@ -153,37 +147,34 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // didn't check for attachment because it's optional in updating
     if (!formData.title || !formData.content || !formData.authorId) {
-      setError(() => "Please fill out all fields");
+      setError("Please fill out all fields");
       return;
     }
 
-    setLoading(() => true);
-    setError(() => "");
+    setLoading(true);
+    setError("");
 
     try {
       const response = question ? await update() : await create();
-
       router.push(`/questions/${response.$id}/${slugify(formData.title)}`);
     } catch (error: any) {
-      setError(() => error.message);
+      setError(error.message);
     }
 
-    setLoading(() => false);
+    setLoading(false);
   };
 
   return (
     <form className="space-y-4" onSubmit={submit}>
       {error && (
         <LabelInputContainer>
-          <div className="text-center">
-            <span className="text-red-500">{error}</span>
-          </div>
+          <div className="text-center text-red-500">{error}</div>
         </LabelInputContainer>
       )}
+
       <LabelInputContainer>
-        <Label htmlFor="title">
+        <Label htmlFor="title" className="text-white">
           Title Address
           <br />
           <small>
@@ -196,14 +187,16 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           name="title"
           placeholder="e.g. Is there an R function for finding the index of an element in a vector?"
           type="text"
+          className="text-black"
           value={formData.title}
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, title: e.target.value }))
           }
         />
       </LabelInputContainer>
+
       <LabelInputContainer>
-        <Label htmlFor="content">
+        <Label htmlFor="content" className="text-white">
           What are the details of your problem?
           <br />
           <small>
@@ -213,13 +206,15 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
         </Label>
         <RTE
           value={formData.content}
+          className="text-black"
           onChange={(value) =>
             setFormData((prev) => ({ ...prev, content: value || "" }))
           }
         />
       </LabelInputContainer>
+
       <LabelInputContainer>
-        <Label htmlFor="image">
+        <Label htmlFor="image" className="text-white">
           Image
           <br />
           <small>
@@ -231,20 +226,17 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           id="image"
           name="image"
           accept="image/*"
-          placeholder="e.g. Is there an R function for finding the index of an element in a vector?"
           type="file"
           onChange={(e) => {
             const files = e.target.files;
-            if (!files || files.length === 0) return;
-            setFormData((prev) => ({
-              ...prev,
-              attachment: files[0],
-            }));
+            if (!files?.length) return;
+            setFormData((prev) => ({ ...prev, attachment: files[0] }));
           }}
         />
       </LabelInputContainer>
+
       <LabelInputContainer>
-        <Label htmlFor="tag">
+        <Label htmlFor="tag" className="text-white">
           Tags
           <br />
           <small>
@@ -253,27 +245,27 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           </small>
         </Label>
         <div className="flex w-full gap-4">
-          <div className="w-full">
-            <Input
-              id="tag"
-              name="tag"
-              placeholder="e.g. (java c objective-c)"
-              type="text"
-              value={tag}
-              onChange={(e) => setTag(() => e.target.value)}
-            />
-          </div>
+          <Input
+            id="tag"
+            name="tag"
+            placeholder="e.g. (java c objective-c)"
+            type="text"
+            className="text-black"
+            autoComplete="on"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+          />
           <button
-            className="relative shrink-0 rounded-full border border-slate-600 bg-slate-700 px-8 py-2 text-sm text-white transition duration-200 hover:shadow-2xl hover:shadow-white/[0.1]"
             type="button"
             onClick={() => {
-              if (tag.length === 0) return;
+              if (!tag) return;
               setFormData((prev) => ({
                 ...prev,
                 tags: new Set([...Array.from(prev.tags), tag]),
               }));
-              setTag(() => "");
+              setTag("");
             }}
+            className="relative shrink-0 rounded-full border border-slate-600 bg-slate-700 px-8 py-2 text-sm text-white transition duration-200 hover:shadow-2xl hover:shadow-white/[0.1]"
           >
             <div className="absolute inset-x-0 -top-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-teal-500 to-transparent shadow-2xl" />
             <span className="relative z-20">Add</span>
@@ -282,22 +274,22 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
         <div className="flex flex-wrap gap-2">
           {Array.from(formData.tags).map((tag, index) => (
             <div key={index} className="flex items-center gap-2">
-              <div className="group relative inline-block rounded-full bg-slate-800 p-px text-xs font-semibold leading-6 text-white no-underline shadow-2xl shadow-zinc-900">
+              <div className="group relative inline-block rounded-full bg-slate-800 p-px text-xs font-semibold leading-6 text-white shadow-2xl shadow-zinc-900">
                 <span className="absolute inset-0 overflow-hidden rounded-full">
                   <span className="absolute inset-0 rounded-full bg-[image:radial-gradient(75%_100%_at_50%_0%,rgba(56,189,248,0.6)_0%,rgba(56,189,248,0)_75%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 </span>
                 <div className="relative z-10 flex items-center space-x-2 rounded-full bg-zinc-950 px-4 py-0.5 ring-1 ring-white/10">
                   <span>{tag}</span>
                   <button
-                    onClick={() => {
+                    type="button"
+                    onClick={() =>
                       setFormData((prev) => ({
                         ...prev,
                         tags: new Set(
                           Array.from(prev.tags).filter((t) => t !== tag)
                         ),
-                      }));
-                    }}
-                    type="button"
+                      }))
+                    }
                   >
                     <IconX size={12} />
                   </button>
@@ -308,10 +300,11 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           ))}
         </div>
       </LabelInputContainer>
+
       <button
-        className="inline-flex h-12 animate-shimmer items-center justify-center rounded-md border border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-6 font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
         type="submit"
         disabled={loading}
+        className="inline-flex h-12 animate-shimmer items-center justify-center rounded-md border border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-6 font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
       >
         {question ? "Update" : "Publish"}
       </button>

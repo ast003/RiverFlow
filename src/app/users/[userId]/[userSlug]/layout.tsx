@@ -1,11 +1,12 @@
 import { avatars } from "@/models/client/config";
-import { users } from "@/models/server/config";
+import { users } from "@/models/server/config"; // Ensure this uses the Appwrite Admin SDK
 import { UserPrefs } from "@/store/Auth";
 import convertDateToRelativeTime from "@/utils/relativeTime";
 import React from "react";
 import EditButton from "./EditButton";
 import Navbar from "./Navbar";
 import { IconClockFilled, IconUserFilled } from "@tabler/icons-react";
+import type { Models } from "appwrite";
 
 const Layout = async ({
   children,
@@ -14,7 +15,18 @@ const Layout = async ({
   children: React.ReactNode;
   params: { userId: string; userSlug: string };
 }) => {
-  const user = await users.get<UserPrefs>(params.userId);
+  let user: Models.User<UserPrefs>;
+
+  try {
+    user = await users.get(params.userId);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return (
+      <div className="container mx-auto px-4 py-32 text-center">
+        <h1 className="text-2xl font-semibold text-red-600">User not found</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto space-y-4 px-4 pb-20 pt-32">
@@ -22,7 +34,7 @@ const Layout = async ({
         <div className="w-40 shrink-0">
           <picture className="block w-full">
             <img
-              src={avatars.getInitials(user.name, 200, 200)}
+              src={avatars.getInitials(user.name, 200, 200).href}
               alt={user.name}
               className="h-full w-full rounded-xl object-cover"
             />

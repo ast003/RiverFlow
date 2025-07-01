@@ -1,67 +1,51 @@
-import { IndexType, Permission } from "node-appwrite";
-import { db, questioncollection } from "../name";
-import { databases } from "./config";
+import {IndexType, Permission} from "node-appwrite"
 
-export default async function createQuestionCollection() {
-  //create collection
-  await databases.createCollection(db, questioncollection, "questions", [
+import {db, questionCollection} from "../name"
+import {databases} from "./config"
+
+
+export default async function createQuestionCollection(){
+  // create collection
+  await databases.createCollection(db, questionCollection, questionCollection, [
     Permission.read("any"),
     Permission.read("users"),
     Permission.create("users"),
     Permission.update("users"),
     Permission.delete("users"),
-  ]);
-  console.log("Question collection created successfully");
+  ])
+  console.log("Question collection is created")
+
+  //creating attributes and Indexes
+
   await Promise.all([
-    databases.createStringAttribute(db, questioncollection, "title", 255, true),
-    databases.createStringAttribute(
-      db,
-      questioncollection,
-      "content",
-      10000,
-      true
-    ),
-    databases.createStringAttribute(
-      db,
-      questioncollection,
-      "authorId",
-      50,
-      true
-    ),
-    databases.createStringAttribute(
-      db,
-      questioncollection,
-      "tags",
-      50,
-      true,
-      undefined,
-      true
-    ),
-    databases.createStringAttribute(
-      db,
-      questioncollection,
-      "attachmentId",
-      50,
-      false
-    ),
+    databases.createStringAttribute(db, questionCollection, "title", 100, true),
+    databases.createStringAttribute(db, questionCollection, "content", 10000, true),
+    databases.createStringAttribute(db, questionCollection, "authorId", 50, true),
+    databases.createStringAttribute(db, questionCollection, "tags", 50, true, undefined, true),
+    databases.createStringAttribute(db, questionCollection, "attachmentId", 50, false),
   ]);
-  console.log("Question collection attributes created successfully");
-  //   await Promise.all([
-  //     databases.createIndex(
-  //       db,
-  //       questioncollection,
-  //       "title",
-  //       IndexType.Fulltext,
-  //       ["title"],
-  //       ["asc"]
-  //     ),
-  //     databases.createIndex(
-  //       db,
-  //       questioncollection,
-  //       "content",
-  //       IndexType.Fulltext,
-  //       ["content"],
-  //       ["asc"]
-  //     ),
-  //   ]);
+  console.log("Question Attributes created")
+
+  // create Indexes
+
+  /*
+  await Promise.all([
+    databases.createIndex(
+      db,
+      questionCollection,
+      "title",
+      IndexType.Fulltext,
+      ["title"],
+      ['asc']
+    ),
+    databases.createIndex(
+      db,
+      questionCollection,
+      "content",
+      IndexType.Fulltext,
+      ["content"],
+      ['asc']
+    )
+  ])
+    */
 }

@@ -1,63 +1,65 @@
 "use client";
 
-import * as React from "react";
-
 import { cn } from "@/lib/utils";
 
-interface ShineBorderProps extends React.HTMLAttributes<HTMLDivElement> {
-  /**
-   * Width of the border in pixels
-   * @default 1
-   */
+type TColorProp = `#${string}` | `#${string}`[];
+interface ShineBorderProps {
+  borderRadius?: number;
   borderWidth?: number;
-  /**
-   * Duration of the animation in seconds
-   * @default 14
-   */
   duration?: number;
-  /**
-   * Color of the border, can be a single color or an array of colors
-   * @default "#000000"
-   */
-  shineColor?: string | string[];
+  color?: TColorProp;
+  className?: string;
+  children: React.ReactNode;
 }
 
 /**
- * Shine Border
- *
- * An animated background border effect component with configurable properties.
+ * @name Shine Border
+ * @description It is an animated background border effect component with easy to use and configurable props.
+ * @param borderRadius defines the radius of the border.
+ * @param borderWidth defines the width of the border.
+ * @param duration defines the animation duration to be applied on the shining border
+ * @param color a string or string array to define border color.
+ * @param className defines the class name to be applied to the component
+ * @param children contains react node elements.
  */
-export function ShineBorder({
+export default function ShineBorder({
+  borderRadius = 8,
   borderWidth = 1,
   duration = 14,
-  shineColor = "#000000",
+  color = "#fff",
   className,
-  style,
-  ...props
+  children,
 }: ShineBorderProps) {
   return (
     <div
       style={
         {
-          "--border-width": `${borderWidth}px`,
-          "--duration": `${duration}s`,
-          backgroundImage: `radial-gradient(transparent,transparent, ${
-            Array.isArray(shineColor) ? shineColor.join(",") : shineColor
-          },transparent,transparent)`,
-          backgroundSize: "300% 300%",
-          mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
-          WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          padding: "var(--border-width)",
-          ...style,
+          "--border-radius": `${borderRadius}px`,
         } as React.CSSProperties
       }
       className={cn(
-        "pointer-events-none absolute inset-0 size-full rounded-[inherit] will-change-[background-position] motion-safe:animate-shine",
-        className,
+        "relative grid min-h-[60px] w-fit min-w-[300px] place-items-center rounded-[--border-radius] bg-white p-3 text-black dark:bg-black dark:text-white",
+        className
       )}
-      {...props}
-    />
+    >
+      <div
+        style={
+          {
+            "--border-width": `${borderWidth}px`,
+            "--border-radius": `${borderRadius}px`,
+            "--border-radius-child": `${borderRadius * 0.2}px`,
+            "--shine-pulse-duration": `${duration}s`,
+            "--mask-linear-gradient": `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
+            "--background-radial-gradient": `radial-gradient(transparent,transparent, ${
+              !(color instanceof Array) ? color : color.join(",")
+            },transparent,transparent)`,
+          } as React.CSSProperties
+        }
+        className={`before:bg-shine-size before:absolute before:inset-[0] before:aspect-square before:h-full before:w-full before:rounded-[--border-radius] before:p-[--border-width] before:will-change-[background-position] before:content-[""] before:![-webkit-mask-composite:xor] before:[background-image:var(--background-radial-gradient)] before:[background-size:300%_300%] before:![mask-composite:exclude] before:[mask:var(--mask-linear-gradient)] motion-safe:before:animate-[shine-pulse_var(--shine-pulse-duration)_infinite_linear]`}
+      ></div>
+      <div className={"z-[1] h-full w-full rounded-[--border-radius-child]"}>
+        {children}
+      </div>
+    </div>
   );
 }
